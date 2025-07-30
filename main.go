@@ -18,6 +18,7 @@ var (
 	headers       []string
 	transform     string
 	requestMethod string
+	dryRun        bool
 )
 
 var rootCmd = &cobra.Command{
@@ -36,6 +37,7 @@ func init() {
 	rootCmd.Flags().StringArrayVar(&headers, "header", []string{}, "Add header (can be used multiple times)")
 	rootCmd.Flags().StringVar(&transform, "transform", "", "Transform expression to apply to input")
 	rootCmd.Flags().StringVar(&requestMethod, "request", "POST", "HTTP request method")
+	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Print requests without sending them")
 }
 
 func main() {
@@ -128,6 +130,22 @@ func processLine(line string, urlExpr string, client *http.Client) error {
 		} else {
 			return fmt.Errorf("invalid header format: %s", headerStr)
 		}
+	}
+
+	// In dry-run mode, print the request instead of sending it
+	if dryRun {
+		fmt.Printf("=== DRY RUN ===\n")
+		fmt.Printf("Method: %s\n", req.Method)
+		fmt.Printf("URL: %s\n", req.URL)
+		fmt.Printf("Headers:\n")
+		for name, values := range req.Header {
+			for _, value := range values {
+				fmt.Printf("  %s: %s\n", name, value)
+			}
+		}
+		fmt.Printf("Body: %s\n", string(bodyBytes))
+		fmt.Printf("===============\n\n")
+		return nil
 	}
 
 	// Send request
