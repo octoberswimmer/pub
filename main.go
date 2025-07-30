@@ -84,10 +84,15 @@ func processLine(line string, urlExpr string, client *http.Client) error {
 		"env":   getEnvMap(),
 	}
 
-	// Evaluate URL expression
-	url, err := evaluateExpression(urlExpr, env)
+	// Evaluate URL expression or use as-is if not a valid expression
+	var urlStr string
+	urlResult, err := evaluateExpression(urlExpr, env)
 	if err != nil {
-		return fmt.Errorf("evaluating URL expression: %w", err)
+		// If evaluation fails, use the URL as a plain string
+		urlStr = urlExpr
+	} else {
+		// Convert the result to string
+		urlStr = fmt.Sprintf("%v", urlResult)
 	}
 
 	// Transform input if specified
@@ -108,7 +113,7 @@ func processLine(line string, urlExpr string, client *http.Client) error {
 	}
 
 	// Create HTTP request
-	req, err := http.NewRequest(requestMethod, fmt.Sprintf("%v", url), bytes.NewReader(bodyBytes))
+	req, err := http.NewRequest(requestMethod, urlStr, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
